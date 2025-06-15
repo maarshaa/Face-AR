@@ -54,6 +54,7 @@ let mouth_dist,
 let restartTimer = 0,
 	restartDuration = 2000,
 	restartTriggered = false;
+let musicStarted = false;
 
 // SCORE
 let score = 0,
@@ -130,9 +131,6 @@ function setup() {
 	}
 
 	highScore = int(localStorage.getItem("highScore")) || 0;
-	if (backgroundMusic && !backgroundMusic.isPlaying()) {
-		backgroundMusic.loop();
-	}
 }
 
 function createWallSegment(index) {
@@ -224,6 +222,12 @@ function handleFaceTracking() {
 	mouthPreviouslyOpen = mouth_dist > 70;
 
 	if (mouthJustOpened) {
+		// Musikstart bei erstem Mundöffnen
+		if (!musicStarted) {
+			backgroundMusic.loop();
+			musicStarted = true;
+		}
+
 		if (!groundShouldMove) groundShouldMove = true;
 		if (!gameOver && physicsCircle.position.y > 100) {
 			Body.applyForce(physicsCircle, physicsCircle.position, {
@@ -245,12 +249,7 @@ function handlePhysics() {
 			pos.x < -100 ||
 			pos.x > width + 100)
 	) {
-		gameOver = true;
-		gameOverSound.play();
-		if (score > highScore) {
-			highScore = score;
-			localStorage.setItem("highScore", highScore);
-		}
+		triggerGameOver();
 	}
 
 	if (!gameOver && groundShouldMove) {
@@ -280,14 +279,21 @@ function handleWalls() {
 			let dx = abs(seg.position.x - physicsCircle.position.x);
 			let dy = abs(seg.position.y - physicsCircle.position.y);
 			if (dx < 70 && dy < seg.wallHeight / 2 + 20) {
-				gameOver = true;
-				gameOverSound.play();
-				if (score > highScore) {
-					highScore = score;
-					localStorage.setItem("highScore", highScore);
-				}
+				triggerGameOver();
 			}
 		}
+	}
+}
+
+function triggerGameOver() {
+	gameOver = true;
+	gameOverSound.play();
+	if (backgroundMusic.isPlaying()) {
+		backgroundMusic.stop();
+	}
+	if (score > highScore) {
+		highScore = score;
+		localStorage.setItem("highScore", highScore);
 	}
 }
 
